@@ -1,27 +1,42 @@
-<!DOCTYPE html>
+<!DO\u003C!DOCTYPE\\u003C!DOCTYPE html> html>CTYPE\u003C!DOCTYPE html> html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
 <title>Where Is My Bus Odisha</title>
 
+<!-- Leaflet Map -->
+<link
+rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
 <style>
+
 body{
   font-family:Arial,sans-serif;
   margin:0;
   background:#f5f7f6;
 }
+
 header{
   background:#087f3e;
   color:white;
   padding:20px;
   text-align:center;
 }
+
 .container{
   padding:20px;
   max-width:600px;
   margin:auto;
 }
+
 input,select,button{
   width:100%;
   padding:14px;
@@ -30,6 +45,7 @@ input,select,button{
   border:1px solid #ccc;
   box-sizing:border-box;
 }
+
 button{
   background:#087f3e;
   color:white;
@@ -37,6 +53,7 @@ button{
   font-size:16px;
   font-weight:bold;
 }
+
 .bus{
   background:white;
   padding:16px;
@@ -44,216 +61,475 @@ button{
   border-radius:12px;
   box-shadow:0 2px 8px #ccc;
 }
+
 .live{
   color:green;
   font-weight:bold;
 }
+
 #status{
   margin-top:15px;
   font-weight:bold;
 }
+
+#map{
+  width:100%;
+  height:400px;
+  margin-top:20px;
+  border-radius:12px;
+  overflow:hidden;
+}
+
 </style>
+
 </head>
+
 
 <body>
 
+
 <header>
-  <h1>🚍 Where Is My Bus Odisha</h1>
-  <p>Government • Private • School • Staff Bus</p>
+
+<h1>🚍 Where Is My Bus Odisha</h1>
+
+<p>
+Government • Private • School • Staff Bus
+</p>
+
 </header>
+
 
 <div class="container">
 
-  <h2>Search Bus</h2>
 
-  <input id="from" placeholder="From: Example Rayagada">
+<h2>Search Bus</h2>
 
-  <input id="to" placeholder="To: Example Lanjigarh">
 
-  <select id="type">
-    <option value="All">All Bus</option>
-    <option value="Government">Government</option>
-    <option value="Private">Private</option>
-    <option value="School">School</option>
-    <option value="Staff">Staff</option>
-  </select>
+<input
+id="from"
+placeholder="From: Example Lanjigarh"
+>
 
-  <button onclick="searchBus()">🔎 SEARCH BUS</button>
 
-  <div id="results"></div>
+<input
+id="to"
+placeholder="To: Example Rayagada"
+>
 
-  <div id="status"></div>
+
+<select id="type">
+
+<option value="All">
+All Bus
+</option>
+
+<option value="Government">
+Government
+</option>
+
+<option value="Private">
+Private
+</option>
+
+<option value="School">
+School
+</option>
+
+<option value="Staff">
+Staff
+</option>
+
+</select>
+
+
+<button onclick="searchBus()">
+🔎 SEARCH BUS
+</button>
+
+
+<div id="results"></div>
+
+
+<div id="status">
+Connecting to Firebase...
+</div>
+
+
+<div id="map"></div>
+
 
 </div>
 
+
+<!-- Leaflet JavaScript -->
+
+<script
+src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+
 <!-- Firebase -->
+
 <script type="module">
 
-import { initializeApp } from
+
+import { initializeApp }
+
+from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
+
 import {
-  getDatabase,
-  ref,
-  onValue
-} from
+
+getDatabase,
+ref,
+onValue
+
+}
+
+from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
-/* ==============================
+
+/* =========================
    FIREBASE CONFIG
-   ============================== */
+   ========================= */
 
 const firebaseConfig = {
 
-  apiKey: "PASTE_YOUR_API_KEY_HERE",
+apiKey:
+"AIzaSyC0CneoQrvruVu3a02A05oR_4whslAtFPQ",
 
-  authDomain: "PASTE_YOUR_AUTH_DOMAIN_HERE",
+authDomain:
+"where-is-my-buss-odisha.firebaseapp.com",
 
-  databaseURL: "PASTE_YOUR_DATABASE_URL_HERE",
+databaseURL:
+"https://where-is-my-buss-odisha-default-rtdb.firebaseio.com",
 
-  projectId: "where-is-my-buss-odisha",
+projectId:
+"where-is-my-buss-odisha",
 
-  storageBucket: "PASTE_YOUR_STORAGE_BUCKET_HERE",
+storageBucket:
+"where-is-my-buss-odisha.firebasestorage.app",
 
-  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID_HERE",
+messagingSenderId:
+"531545613411",
 
-  appId: "PASTE_YOUR_APP_ID_HERE"
+appId:
+"1:531545613411:web:3d755ee06999fd23108456"
 
 };
 
 
-/* Firebase start */
+/* =========================
+   START FIREBASE
+   ========================= */
 
-const app = initializeApp(firebaseConfig);
+const app =
+initializeApp(firebaseConfig);
 
-const db = getDatabase(app);
+const db =
+getDatabase(app);
 
 
-/* Bus data */
+/* =========================
+   MAP START
+   ========================= */
 
-let buses = {};
+const map =
+L.map("map").setView(
+[19.9167,83.4167],
+10
+);
 
-const busesRef = ref(db, "buses");
 
-onValue(busesRef, (snapshot) => {
+L.tileLayer(
+"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
+attribution:
+"&copy; OpenStreetMap contributors"
+}
+).addTo(map);
 
-  buses = snapshot.val() || {};
 
-  document.getElementById("status").innerHTML =
-    "🔥 Firebase connected • Bus data ready";
+let busMarker = null;
+
+
+/* =========================
+   BUS DATA
+   ========================= */
+
+let currentBus = null;
+
+
+/* =========================
+   FIREBASE STAFF-001
+   ========================= */
+
+const busRef =
+ref(db,"STAFF-001");
+
+
+onValue(busRef,(snapshot)=>{
+
+const bus =
+snapshot.val();
+
+
+if(!bus){
+
+document.getElementById("status").innerHTML =
+"❌ Bus data not found";
+
+return;
+
+}
+
+
+currentBus = bus;
+
+
+/* Firebase data */
+
+const latitude =
+Number(bus.Latitude);
+
+const longitude =
+Number(bus.Longitude);
+
+
+const busNumber =
+bus.busNumber || "STAFF-001";
+
+const from =
+bus.From || "";
+
+const to =
+bus.to || "";
+
+const type =
+bus.Type || "Staff";
+
+
+/* Status */
+
+document.getElementById("status").innerHTML =
+"🔥 Firebase connected • Live bus location ready";
+
+
+/* =========================
+   MAP UPDATE
+   ========================= */
+
+if(
+!isNaN(latitude) &&
+!isNaN(longitude)
+){
+
+if(busMarker){
+
+busMarker.setLatLng(
+[latitude,longitude]
+);
+
+}else{
+
+busMarker =
+L.marker(
+[latitude,longitude]
+).addTo(map);
+
+}
+
+
+busMarker
+.bindPopup(
+"🚍 " +
+busNumber +
+"<br>" +
+from +
+" → " +
+to
+);
+
+
+map.setView(
+[latitude,longitude],
+13
+);
+
+}
+
+
+/* =========================
+   SHOW BUS
+   ========================= */
+
+showBus(bus);
 
 });
 
 
-/* Search Bus */
 
-window.searchBus = function(){
+/* =========================
+   SHOW BUS FUNCTION
+   ========================= */
 
-  const from =
-    document.getElementById("from").value.toLowerCase();
+function showBus(bus){
 
-  const to =
-    document.getElementById("to").value.toLowerCase();
-
-  const type =
-    document.getElementById("type").value;
-
-  const results =
-    document.getElementById("results");
-
-  results.innerHTML = "";
-
-  let found = false;
-
-  Object.values(buses).forEach(bus => {
-
-    const route =
-      ((bus.from || "") + " " + (bus.to || "")).toLowerCase();
-
-    const typeMatch =
-      type === "All" || bus.type === type;
-
-    const fromMatch =
-      !from || route.includes(from);
-
-    const toMatch =
-      !to || route.includes(to);
-
-    if(fromMatch && toMatch && typeMatch){
-
-      found = true;
-
-      results.innerHTML += `
-
-        <div class="bus">
-
-          <h3>🚍 ${bus.number || "Bus"}</h3>
-
-          <p>
-            <b>Route:</b>
-            ${bus.from || "-"} → ${bus.to || "-"}
-          </p>
-
-          <p>
-            <b>Type:</b>
-            ${bus.type || "-"}
-          </p>
-
-          <p class="live">
-            📍 ${bus.status || "Location unavailable"}
-          </p>
-
-        </div>
-
-      `;
-
-    }
-
-  });
-
-  if(!found){
-
-    results.innerHTML =
-      "<p>❌ No bus found. Try another search.</p>"
+const results =
+document.getElementById("results");
 
 
-  
+const busNumber =
+bus.busNumber || "STAFF-001";
+
+const from =
+bus.From || "-";
+
+const to =
+bus.to || "-";
+
+const type =
+bus.Type || "Staff";
+
+const latitude =
+bus.Latitude || "-";
+
+const longitude =
+bus.Longitude || "-";
+
+
+results.innerHTML = `
+
+<div class="bus">
+
+<h3>
+🚍 ${busNumber}
+</h3>
+
+<p>
+<b>Route:</b>
+${from} → ${to}
+</p>
+
+<p>
+<b>Type:</b>
+${type}
+</p>
+
+<p class="live">
+📍 LIVE LOCATION
+</p>
+
+<p>
+Latitude:
+${latitude}
+</p>
+
+<p>
+Longitude:
+${longitude}
+</p>
+
+</div>
+
+`;
+
+}
 
 
 
+/* =========================
+   SEARCH BUS
+   ========================= */
+
+window.searchBus =
+function(){
+
+if(!currentBus){
+
+document.getElementById("results").innerHTML =
+"❌ Bus data loading...";
+
+return;
+
+}
 
 
-</script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+const from =
+document
+.getElementById("from")
+.value
+.toLowerCase()
+.trim();
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyC0CneoQrvruVu3a02A05oR_4whslAtFPQ",
-  authDomain: "where-is-my-buss-odisha.firebaseapp.com",
-  databaseURL: "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com",
-  projectId: "where-is-my-buss-odisha",
-  storageBucket: "where-is-my-buss-odisha.firebasestorage.app",
-  messagingSenderId: "531545613411",
-  appId: "1:531545613411:web:3d755ee06999fd23108456"
+
+const to =
+document
+.getElementById("to")
+.value
+.toLowerCase()
+.trim();
+
+
+const type =
+document
+.getElementById("type")
+.value;
+
+
+const busFrom =
+(currentBus.From || "")
+.toLowerCase();
+
+
+const busTo =
+(currentBus.to || "")
+.toLowerCase();
+
+
+const busType =
+currentBus.Type || "Staff";
+
+
+const fromMatch =
+!from ||
+busFrom.includes(from);
+
+
+const toMatch =
+!to ||
+busTo.includes(to);
+
+
+const typeMatch =
+type === "All" ||
+busType === type;
+
+
+if(
+fromMatch &&
+toMatch &&
+typeMatch
+){
+
+showBus(currentBus);
+
+}else{
+
+document.getElementById("results").innerHTML =
+"<p>❌ No bus found. Try another search.</p>";
+
+}
+
 };
 
-firebase.initializeApp(firebaseConfig);
 
-const db = firebase.database();
-
-const busRef = db.ref("STAFF-001");
-
-busRef.on("value", (snapshot) => {
-  const bus = snapshot.val();
-
-  if (bus) {
-    console.log("Bus data:", bus);
-    console.log("Latitude:", bus.Latitude);
-    console.log("Longitude:", bus.Longitude);
-  }
-});
 </script>
+
+
 </body>
+
 </html>
