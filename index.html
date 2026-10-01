@@ -225,6 +225,35 @@ window.searchBus = function(){
 
 
 </script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyC0CneoQrvruVu3a02A05oR_4whslAtFPQ",
+  authDomain: "where-is-my-buss-odisha.firebaseapp.com",
+  databaseURL: "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com",
+  projectId: "where-is-my-buss-odisha",
+  storageBucket: "where-is-my-buss-odisha.firebasestorage.app",
+  messagingSenderId: "531545613411",
+  appId: "1:531545613411:web:3d755ee06999fd23108456"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+const busRef = db.ref("STAFF-001");
+
+busRef.on("value", (snapshot) => {
+  const bus = snapshot.val();
+
+  if (bus) {
+    console.log("Bus data:", bus);
+    console.log("Latitude:", bus.Latitude);
+    console.log("Longitude:", bus.Longitude);
+  }
+});
+</script>
 </body>
 </html>
