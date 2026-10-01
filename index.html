@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
 <meta charset="UTF-8">
 
 <meta name="viewport"
@@ -9,11 +10,9 @@ content="width=device-width, initial-scale=1.0">
 
 <title>Where Is My Bus Odisha</title>
 
-<!-- Leaflet CSS -->
 <link
 rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
 
@@ -26,48 +25,64 @@ body{
 header{
   background:#087f3e;
   color:white;
-  padding:20px;
+  padding:25px 15px;
   text-align:center;
+}
+
+header h1{
+  margin:0;
+  font-size:30px;
+}
+
+header p{
+  font-size:17px;
 }
 
 .container{
   padding:20px;
-  max-width:600px;
+  max-width:650px;
   margin:auto;
 }
 
 input,select,button{
   width:100%;
-  padding:14px;
+  padding:15px;
   margin:8px 0;
   border-radius:8px;
   border:1px solid #ccc;
   box-sizing:border-box;
+  font-size:16px;
 }
 
 button{
   background:#087f3e;
   color:white;
   border:0;
-  font-size:16px;
   font-weight:bold;
+  cursor:pointer;
 }
 
 .bus{
   background:white;
-  padding:16px;
-  margin-top:15px;
-  border-radius:12px;
-  box-shadow:0 2px 8px #ccc;
+  padding:20px;
+  margin-top:18px;
+  border-radius:15px;
+  box-shadow:0 2px 10px #ccc;
+}
+
+.bus h2{
+  margin-top:0;
 }
 
 .live{
   color:green;
   font-weight:bold;
+  font-size:18px;
 }
 
 #status{
-  margin-top:15px;
+  margin-top:18px;
+  padding:10px;
   font-weight:bold;
 }
 
@@ -75,11 +90,12 @@ button{
   width:100%;
   height:400px;
   margin-top:20px;
-  border-radius:12px;
+  border-radius:15px;
   overflow:hidden;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -96,23 +112,19 @@ Government • Private • School • Staff Bus
 
 <div class="container">
 
-<h2>Search Bus</h2>
+<h2>🔎 Search Bus</h2>
 
 <input
 id="from"
-placeholder="From: Example Lanjigarh"
->
+placeholder="From: Example Lanjigarh">
 
 <input
 id="to"
-placeholder="To: Example Rayagada"
->
+placeholder="To: Example Rayagada">
 
 <select id="type">
 
-<option value="All">
-All Bus
-</option>
+<option value="All">All Bus</option>
 
 <option value="Government">
 Government
@@ -139,20 +151,16 @@ Staff
 <div id="results"></div>
 
 <div id="status">
-Connecting to Firebase...
+⏳ Connecting to Firebase...
 </div>
 
 <div id="map"></div>
 
 </div>
 
-<!-- Leaflet JavaScript -->
-
 <script
 src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 </script>
-
-<!-- Firebase -->
 
 <script type="module">
 
@@ -160,46 +168,46 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-  getDatabase,
-  ref,
-  onValue
+getDatabase,
+ref,
+onValue
 }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
 /* =========================
    FIREBASE CONFIG
-   ========================= */
+========================= */
 
 const firebaseConfig = {
 
-  apiKey:
-  "AIzaSyC0CneoQrvruVu3a02A05oR_4whslAtFPQ",
+apiKey:
+"AIzaSyC0CneoQrvruVu3a02A05oR_4whslAtFPQ",
 
-  authDomain:
-  "where-is-my-buss-odisha.firebaseapp.com",
+authDomain:
+"where-is-my-buss-odisha.firebaseapp.com",
 
-  databaseURL:
-  "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com",
+databaseURL:
+"https://where-is-my-buss-odisha-default-rtdb.firebaseio.com",
 
-  projectId:
-  "where-is-my-buss-odisha",
+projectId:
+"where-is-my-buss-odisha",
 
-  storageBucket:
-  "where-is-my-buss-odisha.firebasestorage.app",
+storageBucket:
+"where-is-my-buss-odisha.firebasestorage.app",
 
-  messagingSenderId:
-  "531545613411",
+messagingSenderId:
+"531545613411",
 
-  appId:
-  "1:531545613411:web:3d755ee06999fd23108456"
+appId:
+"1:531545613411:web:3d755ee06999fd23108456"
 
 };
 
 
 /* =========================
-   START FIREBASE
-   ========================= */
+   FIREBASE START
+========================= */
 
 const app =
 initializeApp(firebaseConfig);
@@ -210,288 +218,271 @@ getDatabase(app);
 
 /* =========================
    MAP
-   ========================= */
+========================= */
 
 const map =
 L.map("map").setView(
-  [19.9167,83.4167],
-  10
+[19.9167,83.4167],
+10
 );
 
-
 L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {
-    attribution:
-    "&copy; OpenStreetMap contributors"
-  }
+"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
+attribution:
+"&copy; OpenStreetMap contributors"
+}
 ).addTo(map);
 
-
 let busMarker = null;
-
-
-/* =========================
-   CURRENT BUS
-   ========================= */
 
 let currentBus = null;
 
 
 /* =========================
-   FIREBASE BUS
-   ========================= */
+   FIREBASE BUS DATA
+========================= */
 
 const busRef =
 ref(db,"STAFF-001");
 
-
 onValue(busRef,(snapshot)=>{
 
-  const bus =
-  snapshot.val();
+const bus =
+snapshot.val();
+
+if(!bus){
+
+document.getElementById("status").innerHTML =
+"❌ Bus data not found";
+
+return;
+
+}
+
+currentBus = bus;
 
 
-  if(!bus){
+/* BUS INFORMATION */
 
-    document.getElementById("status").innerHTML =
-    "❌ Bus data not found";
+const latitude =
+Number(bus.Latitude);
 
-    return;
+const longitude =
+Number(bus.Longitude);
 
-  }
+const busNumber =
+bus.busNumber || "STAFF-001";
 
+const from =
+bus.From || "-";
 
-  currentBus = bus;
+const to =
+bus.to || "-";
 
-
-  /* Bus information */
-
-  const latitude =
-  Number(bus.Latitude);
-
-  const longitude =
-  Number(bus.Longitude);
-
-  const busNumber =
-  bus.busNumber || "STAFF-001";
-
-  const from =
-  bus.From || "-";
-
-  const to =
-  bus.to || "-";
-
-  const type =
-  bus.Type || "Staff";
+const type =
+bus.Type || "Staff";
 
 
-  /* Firebase status */
+/* STATUS */
 
-  document.getElementById("status").innerHTML =
-  "🔥 Firebase connected • Live bus location ready";
-
-
-  /* =========================
-     UPDATE MAP
-     ========================= */
-
-  if(
-    !isNaN(latitude) &&
-    !isNaN(longitude)
-  ){
-
-    if(busMarker){
-
-      busMarker.setLatLng(
-        [latitude,longitude]
-      );
-
-    }else{
-
-      busMarker =
-      L.marker(
-        [latitude,longitude]
-      ).addTo(map);
-
-    }
+document.getElementById("status").innerHTML =
+"🔥 Firebase connected • Live bus location ready";
 
 
-    busMarker.bindPopup(
-      "🚍 " +
-      busNumber +
-      "<br>" +
-      from +
-      " → " +
-      to
-    );
+/* MAP LOCATION */
+
+if(
+!isNaN(latitude) &&
+!isNaN(longitude)
+){
+
+if(busMarker){
+
+busMarker.setLatLng(
+[latitude,longitude]
+);
+
+}else{
+
+busMarker =
+L.marker(
+[latitude,longitude]
+).addTo(map);
+
+}
+
+busMarker.bindPopup(
+
+"🚍 <b>" +
+busNumber +
+"</b><br>" +
+from +
+" → " +
+to
+
+);
+
+map.setView(
+[latitude,longitude],
+13
+);
+
+}
 
 
-    map.setView(
-      [latitude,longitude],
-      13
-    );
+/* SHOW BUS */
 
-  }
-
-
-  /* Show bus */
-
-  showBus(bus);
+showBus(bus);
 
 });
 
 
 /* =========================
    SHOW BUS
-   ========================= */
+========================= */
 
 function showBus(bus){
 
-  const results =
-  document.getElementById("results");
+const results =
+document.getElementById("results");
+
+const busNumber =
+bus.busNumber || "STAFF-001";
+
+const from =
+bus.From || "-";
+
+const to =
+bus.to || "-";
+
+const type =
+bus.Type || "Staff";
+
+const latitude =
+bus.Latitude ?? "-";
+
+const longitude =
+bus.Longitude ?? "-";
 
 
-  const busNumber =
-  bus.busNumber || "STAFF-001";
+results.innerHTML = `
 
-  const from =
-  bus.From || "-";
+<div class="bus">
 
-  const to =
-  bus.to || "-";
+<h2>
+🚍 ${busNumber}
+</h2>
 
-  const type =
-  bus.Type || "Staff";
+<p>
+<b>Route:</b>
+${from} → ${to}
+</p>
 
-  const latitude =
-  bus.Latitude || "-";
+<p>
+<b>Type:</b>
+${type}
+</p>
 
-  const longitude =
-  bus.Longitude || "-";
+<p class="live">
+📍 LIVE LOCATION
+</p>
 
+<p>
+<b>Latitude:</b>
+${latitude}
+</p>
 
-  results.innerHTML = `
+<p>
+<b>Longitude:</b>
+${longitude}
+</p>
 
-  <div class="bus">
+</div>
 
-    <h3>
-      🚍 ${busNumber}
-    </h3>
-
-    <p>
-      <b>Route:</b>
-      ${from} → ${to}
-    </p>
-
-    <p>
-      <b>Type:</b>
-      ${type}
-    </p>
-
-    <p class="live">
-      📍 LIVE LOCATION
-    </p>
-
-    <p>
-      Latitude: ${latitude}
-    </p>
-
-    <p>
-      Longitude: ${longitude}
-    </p>
-
-  </div>
-
-  `;
+`;
 
 }
 
 
 /* =========================
    SEARCH BUS
-   ========================= */
+========================= */
 
 window.searchBus =
 function(){
 
-  if(!currentBus){
+if(!currentBus){
 
-    document.getElementById("results").innerHTML =
-    "❌ Bus data loading...";
+document.getElementById("results").innerHTML =
+"⏳ Bus data loading...";
 
-    return;
+return;
 
-  }
+}
 
+const from =
+document
+.getElementById("from")
+.value
+.toLowerCase()
+.trim();
 
-  const from =
-  document
-  .getElementById("from")
-  .value
-  .toLowerCase()
-  .trim();
+const to =
+document
+.getElementById("to")
+.value
+.toLowerCase()
+.trim();
 
-
-  const to =
-  document
-  .getElementById("to")
-  .value
-  .toLowerCase()
-  .trim();
-
-
-  const type =
-  document
-  .getElementById("type")
-  .value;
+const type =
+document
+.getElementById("type")
+.value;
 
 
-  const busFrom =
-  (currentBus.From || "")
-  .toLowerCase()
-  .trim();
+const busFrom =
+(currentBus.From || "")
+.toLowerCase();
+
+const busTo =
+(currentBus.to || "")
+.toLowerCase();
+
+const busType =
+currentBus.Type || "Staff";
 
 
-  const busTo =
-  (currentBus.to || "")
-  .toLowerCase()
-  .trim();
+const fromMatch =
+!from ||
+busFrom.includes(from);
+
+const toMatch =
+!to ||
+busTo.includes(to);
+
+const typeMatch =
+type === "All" ||
+busType === type;
 
 
-  const busType =
-  currentBus.Type || "Staff";
+if(
+fromMatch &&
+toMatch &&
+typeMatch
+){
 
+showBus(currentBus);
 
-  const fromMatch =
-  !from ||
-  busFrom.includes(from);
+}else{
 
+document.getElementById("results").innerHTML =
 
-  const toMatch =
-  !to ||
-  busTo.includes(to);
+"<div class='bus'>" +
+"❌ No bus found. Try another search." +
+"</div>";
 
-
-  const typeMatch =
-  type === "All" ||
-  busType === type;
-
-
-  if(
-    fromMatch &&
-    toMatch &&
-    typeMatch
-  ){
-
-    showBus(currentBus);
-
-  }else{
-
-    document.getElementById("results").innerHTML =
-    "<p>❌ No bus found. Try another search.</p>";
-
-  }
+}
 
 };
 
