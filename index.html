@@ -59,7 +59,6 @@ button{
   color:white;
   border:0;
   font-weight:bold;
-  cursor:pointer;
 }
 
 .bus{
@@ -126,21 +125,13 @@ placeholder="To: Example Rayagada">
 
 <option value="All">All Bus</option>
 
-<option value="Government">
-Government
-</option>
+<option value="Government">Government</option>
 
-<option value="Private">
-Private
-</option>
+<option value="Private">Private</option>
 
-<option value="School">
-School
-</option>
+<option value="School">School</option>
 
-<option value="Staff">
-Staff
-</option>
+<option value="Staff">Staff</option>
 
 </select>
 
@@ -240,7 +231,28 @@ let currentBus = null;
 
 
 /* =========================
-   FIREBASE BUS DATA
+   FIREBASE DATA HELPER
+========================= */
+
+function getField(obj,name){
+
+const key =
+Object.keys(obj || {}).find(
+k =>
+k.trim().toLowerCase()
+===
+name.trim().toLowerCase()
+);
+
+return key
+? obj[key]
+: null;
+
+}
+
+
+/* =========================
+   BUS DATA
 ========================= */
 
 const busRef =
@@ -263,25 +275,36 @@ return;
 currentBus = bus;
 
 
-/* BUS INFORMATION */
+/* READ FIREBASE DATA */
 
-const latitude =
-Number(bus.Latitude);
+const latitudeValue =
+getField(bus,"Latitude");
 
-const longitude =
-Number(bus.Longitude);
+const longitudeValue =
+getField(bus,"Longitude");
 
 const busNumber =
-bus.busNumber || "STAFF-001";
+getField(bus,"busNumber")
+|| "STAFF-001";
 
 const from =
-bus.From || "-";
+getField(bus,"From")
+|| "-";
 
 const to =
-bus.to || "-";
+getField(bus,"to")
+|| "-";
 
 const type =
-bus.Type || "Staff";
+getField(bus,"Type")
+|| "Staff";
+
+
+const latitude =
+Number(latitudeValue);
+
+const longitude =
+Number(longitudeValue);
 
 
 /* STATUS */
@@ -290,7 +313,7 @@ document.getElementById("status").innerHTML =
 "🔥 Firebase connected • Live bus location ready";
 
 
-/* MAP LOCATION */
+/* MAP */
 
 if(
 !isNaN(latitude) &&
@@ -347,23 +370,30 @@ function showBus(bus){
 const results =
 document.getElementById("results");
 
+
 const busNumber =
-bus.busNumber || "STAFF-001";
+getField(bus,"busNumber")
+|| "STAFF-001";
 
 const from =
-bus.From || "-";
+getField(bus,"From")
+|| "-";
 
 const to =
-bus.to || "-";
+getField(bus,"to")
+|| "-";
 
 const type =
-bus.Type || "Staff";
+getField(bus,"Type")
+|| "Staff";
 
 const latitude =
-bus.Latitude ?? "-";
+getField(bus,"Latitude")
+?? "-";
 
 const longitude =
-bus.Longitude ?? "-";
+getField(bus,"Longitude")
+?? "-";
 
 
 results.innerHTML = `
@@ -421,6 +451,7 @@ return;
 
 }
 
+
 const from =
 document
 .getElementById("from")
@@ -442,15 +473,23 @@ document
 
 
 const busFrom =
-(currentBus.From || "")
-.toLowerCase();
+String(
+getField(currentBus,"From") || ""
+)
+.toLowerCase()
+.trim();
 
 const busTo =
-(currentBus.to || "")
-.toLowerCase();
+String(
+getField(currentBus,"to") || ""
+)
+.toLowerCase()
+.trim();
 
 const busType =
-currentBus.Type || "Staff";
+String(
+getField(currentBus,"Type") || "Staff"
+);
 
 
 const fromMatch =
