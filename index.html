@@ -59,6 +59,7 @@ button{
   color:white;
   border:0;
   font-weight:bold;
+  cursor:pointer;
 }
 
 .bus{
@@ -93,6 +94,15 @@ button{
   overflow:hidden;
 }
 
+.noBus{
+  background:white;
+  padding:20px;
+  margin-top:18px;
+  border-radius:15px;
+  box-shadow:0 2px 10px #ccc;
+  font-size:18px;
+}
+
 </style>
 
 </head>
@@ -114,6 +124,10 @@ Government • Private • School • Staff Bus
 <h2>🔎 Search Bus</h2>
 
 <input
+id="busNumber"
+placeholder="Bus Number: Example STAFF-001">
+
+<input
 id="from"
 placeholder="From: Example Lanjigarh">
 
@@ -125,13 +139,21 @@ placeholder="To: Example Rayagada">
 
 <option value="All">All Bus</option>
 
-<option value="Government">Government</option>
+<option value="Government">
+Government
+</option>
 
-<option value="Private">Private</option>
+<option value="Private">
+Private
+</option>
 
-<option value="School">School</option>
+<option value="School">
+School
+</option>
 
-<option value="Staff">Staff</option>
+<option value="Staff">
+Staff
+</option>
 
 </select>
 
@@ -149,9 +171,11 @@ placeholder="To: Example Rayagada">
 
 </div>
 
+
 <script
 src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 </script>
+
 
 <script type="module">
 
@@ -225,178 +249,148 @@ attribution:
 }
 ).addTo(map);
 
-let busMarker = null;
 
-let currentBus = null;
+/* =========================
+   VARIABLES
+========================= */
+
+let allBuses = [];
+
+let markers = [];
 
 
 /* =========================
-   FIREBASE DATA HELPER
+   READ ALL BUS DATA
 ========================= */
 
-function getField(obj,name){
+const busesRef =
+ref(db);
 
-const key =
-Object.keys(obj || {}).find(
-k =>
-k.trim().toLowerCase()
-===
-name.trim().toLowerCase()
-);
+onValue(busesRef,(snapshot)=>{
 
-return key
-? obj[key]
-: null;
-
-}
-
-
-/* =========================
-   BUS DATA
-========================= */
-
-const busRef =
-ref(db,"STAFF-001");
-
-onValue(busRef,(snapshot)=>{
-
-const bus =
+const data =
 snapshot.val();
 
-if(!bus){
+allBuses = [];
+
+if(!data){
 
 document.getElementById("status").innerHTML =
-"❌ Bus data not found";
+"❌ No bus data found";
 
 return;
 
 }
 
-currentBus = bus;
 
+/* READ EACH BUS */
 
-/* READ FIREBASE DATA */
+Object.keys(data).forEach((busId)=>{
 
-const latitudeValue =
-getField(bus,"Latitude");
+const bus =
+data[busId];
 
-const longitudeValue =
-getField(bus,"Longitude");
+if(
+bus &&
+typeof bus === "object" &&
+(
+bus.busNumber ||
+bus.From ||
+bus.to ||
+bus.Type
+)
+){
 
-const busNumber =
-getField(bus,"busNumber")
-|| "STAFF-001";
+allBuses.push({
 
-const from =
-getField(bus,"From")
-|| "-";
+...bus,
 
-const to =
-getField(bus,"to")
-|| "-";
+databaseId:busId
 
-const type =
-getField(bus,"Type")
-|| "Staff";
+});
 
+}
 
-const latitude =
-Number(latitudeValue);
-
-const longitude =
-Number(longitudeValue);
+});
 
 
 /* STATUS */
 
 document.getElementById("status").innerHTML =
-"🔥 Firebase connected • Live bus location ready";
+"🔥 Firebase connected • " +
+allBuses.length +
+" bus ready";
 
 
-/* MAP */
+/* SHOW ALL BUSES */
 
-if(
-!isNaN(latitude) &&
-!isNaN(longitude)
-){
-
-if(busMarker){
-
-busMarker.setLatLng(
-[latitude,longitude]
-);
-
-}else{
-
-busMarker =
-L.marker(
-[latitude,longitude]
-).addTo(map);
-
-}
-
-busMarker.bindPopup(
-
-"🚍 <b>" +
-busNumber +
-"</b><br>" +
-from +
-" → " +
-to
-
-);
-
-map.setView(
-[latitude,longitude],
-13
-);
-
-}
-
-
-/* SHOW BUS */
-
-showBus(bus);
+showBuses(allBuses);
 
 });
 
 
 /* =========================
-   SHOW BUS
+   SHOW BUS LIST
 ========================= */
 
-function showBus(bus){
+function showBuses(buses){
 
 const results =
 document.getElementById("results");
 
+results.innerHTML = "";
+
+
+/* CLEAR OLD MARKERS */
+
+markers.forEach(marker=>{
+map.removeLayer(marker);
+});
+
+markers = [];
+
+
+if(buses.length === 0){
+
+results.innerHTML =
+"<div class='noBus'>" +
+"❌ No bus found. Try another search." +
+"</div>";
+
+return;
+
+}
+
+
+/* SHOW EACH BUS */
+
+buses.forEach(bus=>{
 
 const busNumber =
-getField(bus,"busNumber")
-|| "STAFF-001";
+bus.busNumber ||
+bus.databaseId ||
+"Unknown Bus";
 
 const from =
-getField(bus,"From")
-|| "-";
+bus.From ||
+"-";
 
 const to =
-getField(bus,"to")
-|| "-";
+bus.to ||
+"-";
 
 const type =
-getField(bus,"Type")
-|| "Staff";
+bus.Type ||
+"Unknown";
 
 const latitude =
-getField(bus,"Latitude")
-?? "-";
+Number(bus.Latitude);
 
 const longitude =
-getField(bus,"Longitude")
-?? "-";
+Number(bus.Longitude);
 
 
-results.innerHTML = `
+results.innerHTML += `
 
 <div class="bus">
 
@@ -420,17 +414,49 @@ ${type}
 
 <p>
 <b>Latitude:</b>
-${latitude}
+${!isNaN(latitude) ? latitude : "-"}
 </p>
 
 <p>
 <b>Longitude:</b>
-${longitude}
+${!isNaN(longitude) ? longitude : "-"}
 </p>
 
 </div>
 
 `;
+
+
+/* MAP MARKER */
+
+if(
+!isNaN(latitude) &&
+!isNaN(longitude)
+){
+
+const marker =
+L.marker(
+[latitude,longitude]
+).addTo(map);
+
+marker.bindPopup(
+
+"🚍 <b>" +
+busNumber +
+"</b><br>" +
+from +
+" → " +
+to +
+"<br>Type: " +
+type
+
+);
+
+markers.push(marker);
+
+}
+
+});
 
 }
 
@@ -442,15 +468,12 @@ ${longitude}
 window.searchBus =
 function(){
 
-if(!currentBus){
-
-document.getElementById("results").innerHTML =
-"⏳ Bus data loading...";
-
-return;
-
-}
-
+const number =
+document
+.getElementById("busNumber")
+.value
+.toLowerCase()
+.trim();
 
 const from =
 document
@@ -472,25 +495,44 @@ document
 .value;
 
 
+/* FILTER */
+
+const filtered =
+allBuses.filter(bus=>{
+
+const busNumber =
+(
+bus.busNumber ||
+bus.databaseId ||
+""
+)
+.toLowerCase()
+.trim();
+
 const busFrom =
-String(
-getField(currentBus,"From") || ""
+(
+bus.From ||
+""
 )
 .toLowerCase()
 .trim();
 
 const busTo =
-String(
-getField(currentBus,"to") || ""
+(
+bus.to ||
+""
 )
 .toLowerCase()
 .trim();
 
 const busType =
-String(
-getField(currentBus,"Type") || "Staff"
-);
+bus.Type ||
+"";
 
+
+const numberMatch =
+!number ||
+busNumber.includes(number);
 
 const fromMatch =
 !from ||
@@ -505,21 +547,44 @@ type === "All" ||
 busType === type;
 
 
-if(
+return
+numberMatch &&
 fromMatch &&
 toMatch &&
-typeMatch
+typeMatch;
+
+});
+
+
+/* SHOW RESULT */
+
+showBuses(filtered);
+
+
+/* MAP VIEW */
+
+if(filtered.length > 0){
+
+const bus =
+filtered[0];
+
+const lat =
+Number(bus.Latitude);
+
+const lng =
+Number(bus.Longitude);
+
+if(
+!isNaN(lat) &&
+!isNaN(lng)
 ){
 
-showBus(currentBus);
+map.setView(
+[lat,lng],
+13
+);
 
-}else{
-
-document.getElementById("results").innerHTML =
-
-"<div class='bus'>" +
-"❌ No bus found. Try another search." +
-"</div>";
+}
 
 }
 
