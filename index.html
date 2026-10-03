@@ -716,7 +716,13 @@ map.setView(
 
 };
 
+} catch (error) {
+  document.getElementById("status").innerHTML =
+    "❌ Main Firebase error: " + error.message;
+}
 </script>
+  
+   
 
 </body>
 
