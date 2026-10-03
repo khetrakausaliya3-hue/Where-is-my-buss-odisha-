@@ -166,41 +166,41 @@ placeholder="To: Example Rayagada">
 <script
 src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 </script>
-<script>
-document.getElementById("status").innerHTML = "🔥 JavaScript running";
-</script>
-   <script>
-import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js")
-.then(() => {
-  document.getElementById("status").innerHTML = "🔥 Firebase module OK";
-})
-.catch((error) => {
-  document.getElementById("status").innerHTML =
-    "❌ Firebase error: " + error.message;
-});
-</script>
-<script>
-import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js")
-.then(() => {
-  document.getElementById("status").innerHTML = "🔥 Database module OK";
-})
-.catch((error) => {
-  document.getElementById("status").innerHTML =
-    
-<script>
-import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js")
-.then(() => {
-  document.getElementById("status").innerHTML =
-    "🔥 Database module OK";
-})
-.catch((error) => {
-  document.getElementById("status").innerHTML =
-    "❌ Database module error: " + error.message;
-});
-</script>
 
-<script type="module">
-try {
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+async function startFirebase(){
+  try {
 const { initializeApp } =
   await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
 
@@ -720,6 +720,7 @@ map.setView(
   document.getElementById("status").innerHTML =
     "❌ Main Firebase error: " + error.message;
 }
+ startFirebase();  
 </script>
   
    
