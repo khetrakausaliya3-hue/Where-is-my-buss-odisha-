@@ -211,7 +211,7 @@ initializeApp(firebaseConfig);
 
 const db =
 getDatabase(app);
-
+document.getElementById("status").innerHTML = "🔥 Firebase SDK started";
 
 const map =
 L.map("map").setView(
