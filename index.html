@@ -186,9 +186,19 @@ import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js")
 })
 .catch((error) => {
   document.getElementById("status").innerHTML =
-    "❌ Database error: " + error.message;
+    
+<script>
+import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js")
+.then(() => {
+  document.getElementById("status").innerHTML =
+    "🔥 Database module OK";
+})
+.catch((error) => {
+  document.getElementById("status").innerHTML =
+    "❌ Database module error: " + error.message;
 });
 </script>
+
 <script type="module">
 
 import { initializeApp }
