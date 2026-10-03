@@ -199,210 +199,350 @@ src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 
 
 <script>
-async function startFirebase(){
-  try {
-const { initializeApp } =
-  await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+const firebaseURL =
+"https://where-is-my-buss-odisha-default-rtdb.firebaseio.com/.json";
 
-const { getDatabase, ref, onValue } =
-  await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
-
-
-
-
-
-
-
-
-
-
-const firebaseConfig = {
-
-apiKey:
-"AIzaSyC0CneoQrvruVu3a02A05oR_4whslAtFPQ",
-
-authDomain:
-"where-is-my-buss-odisha.firebaseapp.com",
-
-databaseURL:
-"https://where-is-my-buss-odisha-default-rtdb.firebaseio.com",
-
-projectId:
-"where-is-my-buss-odisha",
-
-storageBucket:
-"where-is-my-buss-odisha.firebasestorage.app",
-
-messagingSenderId:
-"531545613411",
-
-appId:
-"1:531545613411:web:3d755ee06999fd23108456"
-
-};
-
-
-const app =
-initializeApp(firebaseConfig);
-
-const db =
-getDatabase(app);
-document.getElementById("status").innerHTML = "🔥 Firebase SDK started";
-
-const map =
-L.map("map").setView(
-[19.9167,83.4167],
-10
+const map = L.map("map").setView(
+  [19.9167,83.4167],
+  10
 );
 
 L.tileLayer(
-"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-{
-attribution:
-"&copy; OpenStreetMap contributors"
-}
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    attribution:
+    "&copy; OpenStreetMap contributors"
+  }
 ).addTo(map);
 
-
 let allBuses = [];
-
 let markers = [];
 
-
-/* =========================
-   GET FIREBASE FIELD
-========================= */
-
 function getBusValue(bus, field, fallback=""){
+  const wanted =
+    field.trim().toLowerCase();
 
-const wanted =
-field.trim().toLowerCase();
+  const key =
+    Object.keys(bus || {}).find(
+      k =>
+      String(k).trim().toLowerCase()
+      === wanted
+    );
 
-const key =
-Object.keys(bus || {}).find(
-k =>
-String(k).trim().toLowerCase()
-=== wanted
-);
+  if(key !== undefined){
+    return bus[key];
+  }
 
-if(key !== undefined){
+  return fallback;
+}
 
-return bus[key];
+async function loadBuses(){
+
+  try{
+
+    document.getElementById("status").innerHTML =
+      "⏳ Loading buses...";
+
+    const response =
+      await fetch(firebaseURL);
+
+    if(!response.ok){
+      throw new Error(
+        "Database connection failed"
+      );
+    }
+
+    const data =
+      await response.json();
+
+    allBuses = [];
+
+    if(!data){
+
+      document.getElementById("status").innerHTML =
+        "❌ No bus data found";
+
+      return;
+    }
+
+    Object.keys(data).forEach(
+      (busId)=>{
+
+        const bus =
+          data[busId];
+
+        if(
+          bus &&
+          typeof bus === "object"
+        ){
+
+          const busNumber =
+            getBusValue(
+              bus,
+              "busNumber",
+              busId
+            );
+
+          const from =
+            getBusValue(
+              bus,
+              "From",
+              ""
+            );
+
+          const to =
+            getBusValue(
+              bus,
+              "to",
+              ""
+            );
+
+          const type =
+            getBusValue(
+              bus,
+              "Type",
+              ""
+            );
+
+          if(
+            busNumber ||
+            from ||
+            to ||
+            type
+          ){
+
+            allBuses.push({
+              ...bus,
+              databaseId: busId
+            });
+
+          }
+
+        }
+
+      }
+    );
+
+    document.getElementById("status").innerHTML =
+      "🔥 Firebase connected • " +
+      allBuses.length +
+      " bus ready";
+
+    showBuses(allBuses);
+
+  }
+  catch(error){
+
+    document.getElementById("status").innerHTML =
+      "❌ Firebase error: " +
+      error.message;
+
+  }
 
 }
 
-return fallback;
-
-}
+loadBuses();
 
 
-/* =========================
-   READ FIREBASE
-========================= */
-
-const busesRef =
-ref(db);
-
-onValue(
-busesRef,
-(snapshot)=>{
-
-const data =
-snapshot.val();
-
-allBuses = [];
-
-if(!data){
-
-document.getElementById("status").innerHTML =
-"❌ No bus data found";
-
-return;
-
-}
 
 
-Object.keys(data).forEach(
-(busId)=>{
-
-const bus =
-data[busId];
-
-if(
-bus &&
-typeof bus === "object"
-){
-
-const busNumber =
-getBusValue(
-bus,
-"busNumber",
-busId
-);
-
-const from =
-getBusValue(
-bus,
-"From",
-""
-);
-
-const to =
-getBusValue(
-bus,
-"to",
-""
-);
-
-const type =
-getBusValue(
-bus,
-"Type",
-""
-);
 
 
-if(
-busNumber ||
-from ||
-to ||
-type
-){
-
-allBuses.push({
-
-...bus,
-
-databaseId:busId
-
-});
-
-}
-
-}
-
-});
 
 
-document.getElementById("status").innerHTML =
-"🔥 Firebase connected • " +
-allBuses.length +
-" bus ready";
 
 
-showBuses(allBuses);
-
-},
-(error)=>{
-
-document.getElementById("status").innerHTML =
-"❌ Firebase error: " +
-error.message;
-
-}
-);
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     
+     
+     
 /* =========================
    SHOW BUS
 ========================= */
