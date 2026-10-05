@@ -193,14 +193,20 @@ src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js">
 
 
 
+  
+    
+
 
 
 
 
 
 <script>
-const firebaseURL =
-     
+window.addEventListener("error", function(e) {
+  document.getElementById("status").innerHTML =
+    "❌ JavaScript error: " + e.message;
+});
+  const firebaseURL =   
 "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com/.json";
 
 const map = L.map("map").setView(
