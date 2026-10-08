@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-     
+
 <head>
 <meta charset="UTF-8">
 
@@ -43,12 +43,17 @@ max-width:650px;
 margin:auto;
 }
 
-input,select,button{
+h2{
+font-size:30px;
+}
+
+input,
+select,
+button{
 width:100%;
 padding:15px;
 margin:8px 0;
 border-radius:8px;
-
 border:1px solid #ccc;
 box-sizing:border-box;
 font-size:16px;
@@ -62,6 +67,16 @@ font-weight:bold;
 cursor:pointer;
 }
 
+button:active{
+background:#056631;
+}
+
+#status{
+margin-top:18px;
+padding:10px;
+font-weight:bold;
+}
+
 .bus{
 background:white;
 padding:20px;
@@ -72,26 +87,13 @@ box-shadow:0 2px 10px #ccc;
 
 .bus h2{
 margin-top:0;
+font-size:24px;
 }
 
 .live{
 color:green;
 font-weight:bold;
 font-size:18px;
-}
-
-#status{
-margin-top:18px;
-padding:10px;
-font-weight:bold;
-}
-
-#map{
-width:100%;
-height:400px;
-margin-top:20px;
-border-radius:15px;
-overflow:hidden;
 }
 
 .noBus{
@@ -103,9 +105,17 @@ box-shadow:0 2px 10px #ccc;
 font-size:18px;
 }
 
-</style>
+#map{
+width:100%;
+height:400px;
+margin-top:20px;
+border-radius:15px;
+overflow:hidden;
+}
 
+</style>
 </head>
+
 
 <body>
 
@@ -119,455 +129,280 @@ Government • Private • School • Staff Bus
 
 </header>
 
+
 <div class="container">
 
 <h2>🔎 Search Bus</h2>
+
 
 <input
 id="busNumber"
 placeholder="Bus Number: Example STAFF-001">
 
+
 <input
 id="from"
 placeholder="From: Example Lanjigarh">
+
 
 <input
 id="to"
 placeholder="To: Example Rayagada">
 
+
 <select id="type">
 
 <option value="All">All Bus</option>
 
-<option value="Government">Government</option>
+<option value="Government">
+Government
+</option>
 
-<option value="Private">Private</option>
+<option value="Private">
+Private
+</option>
 
-<option value="School">School</option>
+<option value="School">
+School
+</option>
 
-<option value="Staff">Staff</option>
+<option value="Staff">
+Staff
+</option>
 
 </select>
+
 
 <button onclick="searchBus()">
 🔎 SEARCH BUS
 </button>
 
-<div id="results"></div>
 
 <div id="status">
-🟢 TEST VERSION
+⏳ Connecting to Firebase...
 </div>
+
+
+<div id="results"></div>
+
 
 <div id="map"></div>
 
+
 </div>
-
-
-
-
-
-     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
- 
-    
-
-
-
-     
-     
 
 <script>
-     document.getElementById("status").innerHTML = "🟢 JavaScript TEST OK";
-window.addEventListener("error", function(e) {
-  document.getElementById("status").innerHTML =
-    "❌ JavaScript error: " + e.message;
-});
-  const firebaseURL =   
+
+const firebaseURL =
 "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com/.json";
-
-let map = null;
-
-if (typeof L !== "undefined") {
-  map = L.map("map").setView(
-    [19.9167,83.4167],
-    10
-  );
-
-  L.tileLayer(
-    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    {
-      attribution:
-      "&copy; OpenStreetMap contributors"
-    }
-  ).addTo(map);
-}
-  
-  
-
-     
-  
-  
-    
-
-  
 
 
 let allBuses = [];
+
 let markers = [];
 
-function getBusValue(bus, field, fallback=""){
-  const wanted =
-    field.trim().toLowerCase();
+let map = null;
 
-  const key =
-    Object.keys(bus || {}).find(
-      k =>
-      String(k).trim().toLowerCase()
-      === wanted
-    );
 
-  if(key !== undefined){
-    return bus[key];
-  }
+/* =========================
+   MAP
+========================= */
 
-  return fallback;
+map = L.map("map").setView(
+[19.9167,83.4167],
+10
+);
+
+
+L.tileLayer(
+"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
+attribution:
+"&copy; OpenStreetMap contributors"
 }
+).addTo(map);
+
+
+/* =========================
+   GET VALUE
+========================= */
+
+function getBusValue(
+bus,
+field,
+fallback=""
+){
+
+const wanted =
+field.trim().toLowerCase();
+
+const key =
+Object.keys(bus || {}).find(
+k =>
+String(k)
+.trim()
+.toLowerCase()
+=== wanted
+);
+
+if(key !== undefined){
+
+return bus[key];
+
+}
+
+return fallback;
+
+}
+
+
+/* =========================
+   LOAD FIREBASE DATA
+========================= */
 
 async function loadBuses(){
 
-  try{
+try{
 
-    document.getElementById("status").innerHTML =
-      "⏳ Loading buses...";
+document.getElementById("status").innerHTML =
+"⏳ Loading buses...";
 
-    const response =
-      await fetch(firebaseURL);
 
-    if(!response.ok){
-      throw new Error(
-        "Database connection failed"
-      );
-    }
+const response =
+await fetch(firebaseURL);
 
-    const data =
-      await response.json();
 
-    allBuses = [];
+if(!response.ok){
 
-    if(!data){
-
-      document.getElementById("status").innerHTML =
-        "❌ No bus data found";
-
-      return;
-    }
-
-    Object.keys(data).forEach(
-      (busId)=>{
-
-        const bus =
-          data[busId];
-
-        if(
-          bus &&
-          typeof bus === "object"
-        ){
-
-          const busNumber =
-            getBusValue(
-              bus,
-              "busNumber",
-              busId
-            );
-
-          const from =
-            getBusValue(
-              bus,
-              "From",
-              ""
-            );
-
-          const to =
-            getBusValue(
-              bus,
-              "to",
-              ""
-            );
-
-          const type =
-            getBusValue(
-              bus,
-              "Type",
-              ""
-            );
-
-          if(
-            busNumber ||
-            from ||
-            to ||
-            type
-          ){
-
-            allBuses.push({
-              ...bus,
-              databaseId: busId
-            });
-
-          }
-
-        }
-
-      }
-    );
-
-    document.getElementById("status").innerHTML =
-      "🔥 Firebase connected • " +
-      allBuses.length +
-      " bus ready";
-
-    showBuses(allBuses);
-
-  }
-  catch(error){
-
-    document.getElementById("status").innerHTML =
-      "❌ Firebase error: " +
-      error.message;
-
-  }
+throw new Error(
+"Database connection failed"
+);
 
 }
 
-loadBuses();
 
+const data =
+await response.json();
 
 
+allBuses = [];
 
 
+if(!data){
 
+document.getElementById("status").innerHTML =
+"❌ No bus data found";
 
+return;
 
+}
 
 
+/* Read all Firebase buses */
 
+Object.keys(data).forEach(
+busId => {
 
+const bus =
+data[busId];
 
 
+if(
+bus &&
+typeof bus === "object"
+){
 
+const busNumber =
+getBusValue(
+bus,
+"busNumber",
+busId
+);
 
 
+const from =
+getBusValue(
+bus,
+"From",
+""
+);
 
 
+const to =
+getBusValue(
+bus,
+"to",
+""
+);
 
 
+const type =
+getBusValue(
+bus,
+"Type",
+""
+);
 
 
+if(
+busNumber ||
+from ||
+to ||
+type
+){
 
+allBuses.push({
 
+...bus,
 
+databaseId:busId
 
+});
 
+}
 
+}
 
+}
 
+);
 
 
+/* Status */
 
+document.getElementById("status").innerHTML =
+"🔥 Firebase connected • "
++
+allBuses.length
++
+" bus ready";
 
 
+/* Show all buses */
 
+showBuses(allBuses);
 
 
+}
 
+catch(error){
 
+document.getElementById("status").innerHTML =
+"❌ Firebase error: "
++
+error.message;
 
+}
 
+}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-     
-     
-     
 /* =========================
-   SHOW BUS
+   SHOW BUSES
 ========================= */
 
 function showBuses(buses){
@@ -575,14 +410,20 @@ function showBuses(buses){
 const results =
 document.getElementById("results");
 
+
 results.innerHTML = "";
 
 
+/* Remove old markers */
+
 markers.forEach(
-marker=>{
+marker => {
+
 map.removeLayer(marker);
+
 }
 );
+
 
 markers = [];
 
@@ -592,24 +433,38 @@ buses.length === 0
 ){
 
 results.innerHTML =
-"<div class='noBus'>" +
-"❌ No bus found. Try another search." +
-"</div>";
+`
+<div class="noBus">
+
+❌ No bus found.
+
+<br><br>
+
+Try another Bus Number,
+From, To or Bus Type.
+
+</div>
+`;
 
 return;
 
 }
 
 
+/* Show each bus */
+
 buses.forEach(
-bus=>{
+bus => {
+
 
 const busNumber =
 getBusValue(
 bus,
 "busNumber",
-bus.databaseId || "Unknown Bus"
+bus.databaseId ||
+"Unknown Bus"
 );
+
 
 const from =
 getBusValue(
@@ -618,6 +473,7 @@ bus,
 "-"
 );
 
+
 const to =
 getBusValue(
 bus,
@@ -625,12 +481,14 @@ bus,
 "-"
 );
 
+
 const type =
 getBusValue(
 bus,
 "Type",
 "Unknown"
 );
+
 
 const latitude =
 Number(
@@ -640,6 +498,7 @@ bus,
 ""
 )
 );
+
 
 const longitude =
 Number(
@@ -651,7 +510,10 @@ bus,
 );
 
 
-results.innerHTML += `
+/* Result card */
+
+results.innerHTML +=
+`
 
 <div class="bus">
 
@@ -675,18 +537,26 @@ ${type}
 
 <p>
 <b>Latitude:</b>
-${!isNaN(latitude) ? latitude : "-"}
+${!isNaN(latitude)
+? latitude
+: "-"
+}
 </p>
 
 <p>
 <b>Longitude:</b>
-${!isNaN(longitude) ? longitude : "-"}
+${!isNaN(longitude)
+? longitude
+: "-"
+}
 </p>
 
 </div>
 
 `;
 
+
+/* Marker */
 
 if(
 !isNaN(latitude) &&
@@ -695,31 +565,50 @@ if(
 
 const marker =
 L.marker(
-[latitude,longitude]
+[
+latitude,
+longitude
+]
 ).addTo(map);
+
 
 marker.bindPopup(
 
-"🚍 <b>" +
-busNumber +
-"</b><br>" +
-from +
-" → " +
-to +
-"<br>Type: " +
-type
+`
+🚍 <b>${busNumber}</b>
+<br>
+${from} → ${to}
+<br>
+Type: ${type}
+`
 
 );
+
 
 markers.push(marker);
 
 }
 
-if(markers.length > 0){
-    const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds(), {
-        padding:[20,20]
-    });
+});
+
+
+/* Zoom map */
+
+if(
+markers.length > 0
+){
+
+const group =
+L.featureGroup(markers);
+
+
+map.fitBounds(
+group.getBounds(),
+{
+padding:[20,20]
+}
+);
+
 }
 
 }
@@ -729,8 +618,7 @@ if(markers.length > 0){
    SEARCH BUS
 ========================= */
 
-window.searchBus =
-function(){
+function searchBus(){
 
 const number =
 document
@@ -739,12 +627,14 @@ document
 .toLowerCase()
 .trim();
 
+
 const from =
 document
 .getElementById("from")
 .value
 .toLowerCase()
 .trim();
+
 
 const to =
 document
@@ -753,26 +643,32 @@ document
 .toLowerCase()
 .trim();
 
+
 const type =
 document
 .getElementById("type")
 .value;
 
 
+/* Filter buses */
+
 const filtered =
 allBuses.filter(
-bus=>{
+bus => {
+
 
 const busNumber =
 String(
 getBusValue(
 bus,
 "busNumber",
-bus.databaseId || ""
+bus.databaseId ||
+""
 )
 )
 .toLowerCase()
 .trim();
+
 
 const busFrom =
 String(
@@ -785,6 +681,7 @@ bus,
 .toLowerCase()
 .trim();
 
+
 const busTo =
 String(
 getBusValue(
@@ -796,6 +693,7 @@ bus,
 .toLowerCase()
 .trim();
 
+
 const busType =
 String(
 getBusValue(
@@ -804,6 +702,7 @@ bus,
 ""
 )
 )
+.toLowerCase()
 .trim();
 
 
@@ -811,91 +710,69 @@ const numberMatch =
 !number ||
 busNumber.includes(number);
 
+
 const fromMatch =
 !from ||
 busFrom.includes(from);
+
 
 const toMatch =
 !to ||
 busTo.includes(to);
 
+
 const typeMatch =
 type === "All" ||
-busType.toLowerCase()
-=== type.toLowerCase();
+busType ===
+type.toLowerCase();
 
 
-return (
+return
 numberMatch &&
 fromMatch &&
 toMatch &&
-typeMatch
+typeMatch;
+
+}
+
 );
 
-});
 
+/* Show result */
 
 showBuses(filtered);
 
 
-if(
+/* Status */
+
+document.getElementById("status").innerHTML =
 filtered.length > 0
-){
-     
-const bus =
-filtered[0];
 
-const lat =
-Number(
-getBusValue(
-bus,
-"Latitude",
-""
-)
-);
+?
 
-const lng =
-Number(
-getBusValue(
-bus,
-"Longitude",
-""
-)
-);
+"✅ "
++
+filtered.length
++
+" bus found"
 
-if(
-!isNaN(lat) &&
-!isNaN(lng)
-){
+:
 
-map.setView(
-[lat,lng],
-13
-);
+"❌ No matching bus found";
+
 
 }
 
-}
 
-};
+/* =========================
+   START
+========================= */
 
-
-  
-
-
+loadBuses();
 
 </script>
-  
-   
 
-
-
-
-
-
-
-     
 
 </body>
-</html>
 
+</html>
