@@ -771,9 +771,48 @@ filtered.length
 
 loadBuses();
 
+function testMyGPS() {
+  const status = document.getElementById("gpsStatus");
+
+  if (!navigator.geolocation) {
+    alert("Your phone does not support GPS location.");
+    return;
+  }
+
+  if (status) {
+    status.textContent = "📍 GPS location is being checked...";
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function (position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      if (status) {
+        status.textContent =
+          "📍 Your GPS: " + lat.toFixed(6) + ", " + lon.toFixed(6);
+      }
+
+      alert("GPS working!\nLatitude: " + lat +
+            "\nLongitude: " + lon);
+    },
+    function (error) {
+      alert("GPS error: " + error.message +
+            "\nPlease allow location permission.");
+      if (status) {
+        status.textContent = "GPS permission or location error.";
+      }
+    },
+    { enableHighAccuracy: true, timeout: 20000 }
+  );
+}
+
 </script>
 
-
+<div style="padding:12px">
+  <button type="button" onclick="testMyGPS()">Test My Phone GPS</button>
+  <p id="gpsStatus">GPS not tested yet</p>
+</div>
 </body>
 
 </html>
