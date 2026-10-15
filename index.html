@@ -806,6 +806,43 @@ function testMyGPS() {
     { enableHighAccuracy: true, timeout: 20000 }
   );
 }
+   
+async function saveLiveGPS() {
+  const status = document.getElementById("liveSaveStatus");
+
+  if (status) {
+    status.textContent = "Checking GPS...";
+  }
+
+  if (!navigator.geolocation) {
+    if (status) status.textContent = "GPS not supported";
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function (position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      if (status) {
+        status.textContent =
+          "GPS found: " + lat.toFixed(6) +
+          ", " + lon.toFixed(6) +
+          ". Firebase save setup still needs checking.";
+      }
+
+      alert("GPS found!\nLatitude: " + lat +
+            "\nLongitude: " + lon);
+    },
+    function (error) {
+      if (status) {
+        status.textContent = "GPS error: " + error.message;
+      }
+      alert("GPS error: " + error.message);
+    },
+    { enableHighAccuracy: true, timeout: 20000 }
+  );
+}
 
 </script>
 
