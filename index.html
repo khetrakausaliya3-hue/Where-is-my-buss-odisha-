@@ -808,39 +808,54 @@ function testMyGPS() {
 }
    
 async function saveLiveGPS() {
-  const status = document.getElementById("liveSaveStatus");
+  const status = document.getElementById("gpsStatus");
 
-  if (status) {
-    status.textContent = "Checking GPS...";
-  }
+  if (status) status.textContent = "Getting GPS location...";
 
   if (!navigator.geolocation) {
     if (status) status.textContent = "GPS not supported";
+    alert("GPS is not supported on this phone.");
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
-    function (position) {
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
+    async function(position) {
+      try {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
 
-      if (status) {
-        status.textContent =
-          "GPS found: " + lat.toFixed(6) +
-          ", " + lon.toFixed(6) +
-          ". Firebase save setup still needs checking.";
+        const response = await fetch(
+          firebaseURL.replace(/\/$/, "") + "/liveGPS.json",
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              latitude: lat,
+              longitude: lon,
+              updatedAt: new Date().toISOString()
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Firebase save failed: " + response.status);
+        }
+
+        if (status) {
+          status.textContent = "GPS saved: " + lat.toFixed(6) + ", " + lon.toFixed(6);
+        }
+
+        alert("GPS saved successfully!");
+      } catch (error) {
+        if (status) status.textContent = "Save error: " + error.message;
+        alert("Firebase save error: " + error.message);
       }
-
-      alert("GPS found!\nLatitude: " + lat +
-            "\nLongitude: " + lon);
     },
-    function (error) {
-      if (status) {
-        status.textContent = "GPS error: " + error.message;
-      }
+    function(error) {
+      if (status) status.textContent = "GPS error: " + error.message;
       alert("GPS error: " + error.message);
     },
-    { enableHighAccuracy: true, timeout: 20000 }
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
   );
 }
 
