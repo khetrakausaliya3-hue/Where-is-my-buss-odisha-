@@ -198,7 +198,7 @@ Staff
 <script>
 
 const firebaseURL =
-"https://where-is-my-buss-odisha-default-rtdb.firebaseio.com/.json";
+"https://where-is-my-buss-odisha-default-rtdb.firebaseio.com";
 
 
 let allBuses = [];
@@ -808,7 +808,7 @@ function testMyGPS() {
 }
    
 async function saveLiveGPS() {
-  const status = document.getElementById("gpsStatus");
+  const status = document.getElementById("liveSaveStatus");
 
   if (status) status.textContent = "Getting GPS location...";
 
@@ -842,7 +842,8 @@ async function saveLiveGPS() {
         }
 
         if (status) {
-          status.textContent = "GPS saved: " + lat.toFixed(6) + ", " + lon.toFixed(6);
+          status.textContent =
+            "GPS saved: " + lat.toFixed(6) + ", " + lon.toFixed(6);
         }
 
         alert("GPS saved successfully!");
