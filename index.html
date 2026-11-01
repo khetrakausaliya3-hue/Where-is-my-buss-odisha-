@@ -807,13 +807,22 @@ function testMyGPS() {
   );
 }
    
+
 async function saveLiveGPS() {
   const status = document.getElementById("liveSaveStatus");
+
+  const busNumber = document
+    .getElementById("busNumber")
+    .value.trim().toUpperCase();
+
+  if (!busNumber) {
+    alert("Please enter Bus Number first.");
+    return;
+  }
 
   if (status) status.textContent = "Getting GPS location...";
 
   if (!navigator.geolocation) {
-    if (status) status.textContent = "GPS not supported";
     alert("GPS is not supported on this phone.");
     return;
   }
@@ -824,18 +833,33 @@ async function saveLiveGPS() {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
 
-        const response = await fetch(
-          firebaseURL.replace(/\/$/, "") + "/liveGPS.json",
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              latitude: lat,
-              longitude: lon,
-              updatedAt: new Date().toISOString()
-            })
-          }
-        );
+        const busURL =
+          firebaseURL.replace(/\/$/, "") +
+          "/" + encodeURIComponent(busNumber) + ".json";
+
+        const check = await fetch(busURL);
+
+        if (!check.ok) {
+          throw new Error("Firebase read failed: " + check.status);
+        }
+
+        const busData = await check.json();
+
+        if (!busData || typeof busData !== "object") {
+          throw new Error("Bus Number not found in Firebase.");
+        }
+
+        const response = await fetch(busURL, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            Latitude: lat,
+            Longitude: lon,
+            updatedAt: new Date().toISOString()
+          })
+        });
 
         if (!response.ok) {
           throw new Error("Firebase save failed: " + response.status);
@@ -843,22 +867,31 @@ async function saveLiveGPS() {
 
         if (status) {
           status.textContent =
-            "GPS saved: " + lat.toFixed(6) + ", " + lon.toFixed(6);
+            "GPS saved for " + busNumber +
+            ": " + lat.toFixed(6) + ", " + lon.toFixed(6);
         }
 
-        alert("GPS saved successfully!");
+        alert("GPS saved successfully for " + busNumber);
+
       } catch (error) {
         if (status) status.textContent = "Save error: " + error.message;
-        alert("Firebase save error: " + error.message);
+        alert("Firebase error: " + error.message);
       }
     },
+
     function(error) {
       if (status) status.textContent = "GPS error: " + error.message;
       alert("GPS error: " + error.message);
     },
-    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0
+    }
   );
 }
+
 
 </script>
 
