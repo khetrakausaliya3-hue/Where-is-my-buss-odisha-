@@ -279,13 +279,21 @@ await fetch(firebaseURL + ".json");
 
 
 if(!response.ok){
+throw new Error("Firebase data load failed");
+}
 
+const buses = await response.json();
+
+console.log("Bus Data:", buses);
+
+document.getElementById("status").innerHTML =
+"✅ Bus data loaded successfully";
 throw new Error(
 "Database connection failed"
 );
 
 }
-
+loadBuses();
 
 const data =
 await response.json();
