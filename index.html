@@ -287,17 +287,23 @@ const buses = await response.json();
 console.log("Bus Data:", buses);
 
 document.getElementById("status").innerHTML =
-"✅ Bus data loaded successfully";
+"✅ Bus data \"✅ Bus data loaded successfully\";loaded successfully";
 throw new Error(
 "Database connection failed"
 );
+}catch(error){
 
+console.error("Firebase Error:", error);
+
+document.getElementById("status").innerHTML =
+"❌ Database connection failed";
+
+}
 }
 loadBuses();
 
 const data =
 await response.json();
-
 
 allBuses = [];
 
