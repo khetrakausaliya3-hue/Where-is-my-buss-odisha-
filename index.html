@@ -199,7 +199,7 @@ async function loadBuses() {
 
   try {
 
-    const response = await fetch(firebaseURL + ".json");
+    const response = await fetch(firebaseURL + "/.json");
 
     if (!response.ok) {
       throw new Error("Firebase data load failed: " + response.status);
