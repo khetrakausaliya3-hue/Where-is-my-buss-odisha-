@@ -1,903 +1,441 @@
+
 <!DOCTYPE html>
 <html lang="en">
-   
+
 <head>
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Where Is My Bus Odisha</title>
 
-<link
-rel="stylesheet"
+<link rel="stylesheet"
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <style>
-
-body{
-font-family:Arial,sans-serif;
-margin:0;
-background:#f5f7f6;
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f5f7f6;
 }
 
-header{
-background:#087f3e;
-color:white;
-padding:25px 15px;
-text-align:center;
+header {
+  background: #087f3e;
+  color: white;
+  padding: 22px 12px;
+  text-align: center;
 }
 
-header h1{
-margin:0;
-font-size:30px;
+header h1 {
+  font-size: 25px;
+  margin: 0;
 }
 
-header p{
-font-size:17px;
+.container {
+  padding: 15px;
+  max-width: 650px;
+  margin: auto;
 }
 
-.container{
-padding:20px;
-max-width:650px;
-margin:auto;
+input, select, button {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  font-size: 16px;
 }
 
-h2{
-font-size:30px;
+button {
+  background: #087f3e;
+  color: white;
+  border: none;
+  font-weight: bold;
 }
 
-input,
-select,
-button{
-width:100%;
-padding:15px;
-margin:8px 0;
-border-radius:8px;
-border:1px solid #ccc;
-box-sizing:border-box;
-font-size:16px;
+#status, #gpsStatus, #liveSaveStatus {
+  padding: 10px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
 }
 
-button{
-background:#087f3e;
-color:white;
-border:0;
-font-weight:bold;
-cursor:pointer;
+.bus {
+  background: white;
+  padding: 18px;
+  margin-top: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #ccc;
 }
 
-button:active{
-background:#056631;
+.live {
+  color: green;
+  font-weight: bold;
 }
 
-#status{
-margin-top:18px;
-padding:10px;
-font-weight:bold;
+.noBus {
+  background: white;
+  padding: 20px;
+  margin-top: 15px;
+  border-radius: 12px;
 }
 
-.bus{
-background:white;
-padding:20px;
-margin-top:18px;
-border-radius:15px;
-box-shadow:0 2px 10px #ccc;
+#map {
+  width: 100%;
+  height: 400px;
+  margin-top: 20px;
+  border-radius: 12px;
 }
-
-.bus h2{
-margin-top:0;
-font-size:24px;
-}
-
-.live{
-color:green;
-font-weight:bold;
-font-size:18px;
-}
-
-.noBus{
-background:white;
-padding:20px;
-margin-top:18px;
-border-radius:15px;
-box-shadow:0 2px 10px #ccc;
-font-size:18px;
-}
-
-#map{
-width:100%;
-height:400px;
-margin-top:20px;
-border-radius:15px;
-overflow:hidden;
-}
-
 </style>
 </head>
-
 
 <body>
 
 <header>
-
 <h1>🚍 Where Is My Bus Odisha</h1>
-
-<p>
-Government • Private • School • Staff Bus
-</p>
-
+<p>Government • Private • School • Staff Bus</p>
 </header>
-
 
 <div class="container">
 
 <h2>🔎 Search Bus</h2>
 
-
-<input
-id="busNumber"
+<input id="busNumber"
 placeholder="Bus Number: Example STAFF-001">
 
-
-<input
-id="from"
+<input id="from"
 placeholder="From: Example Lanjigarh">
 
-
-<input
-id="to"
+<input id="to"
 placeholder="To: Example Rayagada">
 
-
 <select id="type">
-
 <option value="All">All Bus</option>
-
-<option value="Government">
-Government
-</option>
-
-<option value="Private">
-Private
-</option>
-
-<option value="School">
-School
-</option>
-
-<option value="Staff">
-Staff
-</option>
-
+<option value="Government">Government</option>
+<option value="Private">Private</option>
+<option value="School">School</option>
+<option value="Staff">Staff</option>
 </select>
 
+<button onclick="searchBus()">🔎 SEARCH BUS</button>
 
-<button onclick="searchBus()">
-🔎 SEARCH BUS
-</button>
-
-
-<div id="status">
-⏳ Connecting to Firebase...
-</div>
-
+<div id="status">⏳ Connecting to Firebase...</div>
 
 <div id="results"></div>
 
-
 <div id="map"></div>
 
+<hr>
+
+<h2>📍 Driver GPS</h2>
+
+<button onclick="testMyGPS()">Test My Phone GPS</button>
+
+<p id="gpsStatus">GPS not tested yet</p>
+
+<button onclick="saveLiveGPS()">Save Live GPS</button>
+
+<p id="liveSaveStatus">Live GPS not saved yet</p>
 
 </div>
 
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-
 <script>
+
+/* FIREBASE DATABASE */
 
 const firebaseURL =
 "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com";
 
-
 let allBuses = [];
-
 let markers = [];
 
-let map = null;
-
-
-/* =========================
-   MAP
-========================= */
-
-map = L.map("map").setView(
-[19.9167,83.4167],
-10
+let map = L.map("map").setView(
+[19.9167, 83.4167], 7
 );
-
 
 L.tileLayer(
 "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
 {
-attribution:
-"&copy; OpenStreetMap contributors"
+attribution: "&copy; OpenStreetMap contributors"
 }
 ).addTo(map);
 
 
-/* =========================
-   GET VALUE
-========================= */
+/* GET DATABASE VALUE */
 
-function getBusValue(
-bus,
-field,
-fallback=""
-){
+function getBusValue(bus, field, fallback = "") {
 
-const wanted =
-field.trim().toLowerCase();
+  const wanted = field.toLowerCase();
 
-const key =
-Object.keys(bus || {}).find(
-k =>
-String(k)
-.trim()
-.toLowerCase()
-=== wanted
-);
+  const key = Object.keys(bus || {}).find(
+    k => k.toLowerCase() === wanted
+  );
 
-if(key !== undefined){
-
-return bus[key];
-
-}
-
-return fallback;
-
+  return key !== undefined ? bus[key] : fallback;
 }
 
 
-/* =========================
-   LOAD FIREBASE DATA
-========================= */
+/* SAFE TEXT */
 
-async function loadBuses(){
-
-try{
-
-document.getElementById("status").innerHTML =
-"⏳ Loading buses...";
-
-
-const response =
-await fetch(firebaseURL + ".json");
-
-
-if(!response.ok){
-throw new Error("Firebase data load failed");
-}
-
-const buses = await response.json();
-
-console.log("Bus Data:", buses);
-
-document.getElementById("status").innerHTML =
-"✅ Bus data \"✅ Bus data loaded successfully\";loaded successfully";
-throw new Error(
-"Database connection failed"
-);
-}catch(error){
-
-console.error("Firebase Error:", error);
-
-document.getElementById("status").innerHTML =
-"❌ Database connection failed";
-
-}
-}
-loadBuses();
-
-const data =
-await response.json();
-
-allBuses = [];
-
-
-if(!data){
-
-document.getElementById("status").innerHTML =
-"❌ No bus data found";
-
-return;
-
+function safeText(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
 }
 
 
-/* Read all Firebase buses */
+/* LOAD FIREBASE DATA */
 
-Object.keys(data).forEach(
-busId => {
+async function loadBuses() {
 
-const bus =
-data[busId];
+  const status = document.getElementById("status");
 
+  status.innerHTML = "⏳ Loading buses...";
 
-if(
-bus &&
-typeof bus === "object"
-){
+  try {
 
-const busNumber =
-getBusValue(
-bus,
-"busNumber",
-busId
-);
+    const response = await fetch(firebaseURL + ".json");
 
+    if (!response.ok) {
+      throw new Error("Firebase data load failed: " + response.status);
+    }
 
-const from =
-getBusValue(
-bus,
-"From",
-""
-);
+    const data = await response.json();
 
+    allBuses = [];
 
-const to =
-getBusValue(
-bus,
-"to",
-""
-);
+    if (!data || typeof data !== "object") {
 
+      status.innerHTML = "❌ No bus data found";
 
-const type =
-getBusValue(
-bus,
-"Type",
-""
-);
+      showBuses([]);
 
+      return;
+    }
 
-if(
-busNumber ||
-from ||
-to ||
-type
-){
+    Object.keys(data).forEach(busId => {
 
-allBuses.push({
+      const bus = data[busId];
 
-...bus,
+      if (bus && typeof bus === "object" && !Array.isArray(bus)) {
 
-databaseId:busId
+        const busNumber = getBusValue(bus, "busNumber", busId);
 
-});
+        const from = getBusValue(bus, "From", "");
+        const to = getBusValue(bus, "to", "");
+        const type = getBusValue(bus, "Type", "");
 
-}
+        allBuses.push({
+          ...bus,
+          databaseId: busId,
+          busNumber: busNumber,
+          From: from,
+          to: to,
+          Type: type
+        });
 
-}
+      }
 
-}
+    });
 
-);
+    status.innerHTML =
+      "🔥 Firebase connected • " +
+      allBuses.length + " bus ready";
 
+    showBuses(allBuses);
 
-/* Status */
+  } catch (error) {
 
-document.getElementById("status").innerHTML =
-"🔥 Firebase connected • "
-+
-allBuses.length
-+
-" bus ready";
+    console.error("Firebase Error:", error);
 
+    status.innerHTML =
+      "❌ Firebase error: " + safeText(error.message);
 
-/* Show all buses */
-
-showBuses(allBuses);
-
-
-}
-
-catch(error){
-
-document.getElementById("status").innerHTML =
-"❌ Firebase error: "
-+
-error.message;
-
-}
+  }
 
 }
 
 
-/* =========================
-   SHOW BUSES
-========================= */
+/* SHOW BUSES */
 
-function showBuses(buses){
+function showBuses(buses) {
 
-const results =
-document.getElementById("results");
+  const results = document.getElementById("results");
 
+  results.innerHTML = "";
 
-results.innerHTML = "";
+  markers.forEach(marker => map.removeLayer(marker));
 
+  markers = [];
 
-/* Remove old markers */
+  if (!buses.length) {
 
-markers.forEach(
-marker => {
+    results.innerHTML = `
+      <div class="noBus">
+        ❌ No bus found.
+        <br><br>
+        Try another Bus Number, From, To or Bus Type.
+      </div>
+    `;
 
-map.removeLayer(marker);
+    return;
+  }
 
-}
-);
+  buses.forEach(bus => {
 
+    const busNumber = getBusValue(bus, "busNumber", bus.databaseId);
+    const from = getBusValue(bus, "From", "-");
+    const to = getBusValue(bus, "to", "-");
+    const type = getBusValue(bus, "Type", "Unknown");
 
-markers = [];
+    const latitude = Number(getBusValue(bus, "Latitude", NaN));
+    const longitude = Number(getBusValue(bus, "Longitude", NaN));
 
+    const validGPS =
+      Number.isFinite(latitude) &&
+      Number.isFinite(longitude) &&
+      latitude >= -90 && latitude <= 90 &&
+      longitude >= -180 && longitude <= 180;
 
-if(
-buses.length === 0
-){
+    results.innerHTML += `
 
-results.innerHTML =
-`
-<div class="noBus">
+      <div class="bus">
 
-❌ No bus found.
+        <h2>🚍 ${safeText(busNumber)}</h2>
 
-<br><br>
+        <p><b>Route:</b>
+        ${safeText(from)} → ${safeText(to)}</p>
 
-Try another Bus Number,
-From, To or Bus Type.
+        <p><b>Type:</b> ${safeText(type)}</p>
 
-</div>
-`;
+        <p class="live">📍 LIVE LOCATION</p>
 
-return;
+        <p><b>Latitude:</b>
+        ${validGPS ? latitude : "-"}</p>
 
-}
+        <p><b>Longitude:</b>
+        ${validGPS ? longitude : "-"}</p>
 
+      </div>
+    `;
 
-/* Show each bus */
+    if (validGPS) {
 
-buses.forEach(
-bus => {
+      const marker = L.marker([
+        latitude,
+        longitude
+      ]).addTo(map);
 
+      marker.bindPopup(`
+        🚍 <b>${safeText(busNumber)}</b>
+        <br>${safeText(from)} → ${safeText(to)}
+        <br>Type: ${safeText(type)}
+      `);
 
-const busNumber =
-getBusValue(
-bus,
-"busNumber",
-bus.databaseId ||
-"Unknown Bus"
-);
+      markers.push(marker);
 
+    }
 
-const from =
-getBusValue(
-bus,
-"From",
-"-"
-);
+  });
 
+  if (markers.length > 0) {
 
-const to =
-getBusValue(
-bus,
-"to",
-"-"
-);
+    map.fitBounds(
+      L.featureGroup(markers).getBounds(),
+      { padding: [20, 20] }
+    );
 
-
-const type =
-getBusValue(
-bus,
-"Type",
-"Unknown"
-);
-
-
-const latitude =
-Number(
-getBusValue(
-bus,
-"Latitude",
-""
-)
-);
-
-
-const longitude =
-Number(
-getBusValue(
-bus,
-"Longitude",
-""
-)
-);
-
-
-/* Result card */
-
-results.innerHTML +=
-`
-
-<div class="bus">
-
-<h2>
-🚍 ${busNumber}
-</h2>
-
-<p>
-<b>Route:</b>
-${from} → ${to}
-</p>
-
-<p>
-<b>Type:</b>
-${type}
-</p>
-
-<p class="live">
-📍 LIVE LOCATION
-</p>
-
-<p>
-<b>Latitude:</b>
-${!isNaN(latitude)
-? latitude
-: "-"
-}
-</p>
-
-<p>
-<b>Longitude:</b>
-${!isNaN(longitude)
-? longitude
-: "-"
-}
-</p>
-
-</div>
-
-`;
-
-
-/* Marker */
-
-if(
-!isNaN(latitude) &&
-!isNaN(longitude)
-){
-
-const marker =
-L.marker(
-[
-latitude,
-longitude
-]
-).addTo(map);
-
-
-marker.bindPopup(
-
-`
-🚍 <b>${busNumber}</b>
-<br>
-${from} → ${to}
-<br>
-Type: ${type}
-`
-
-);
-
-
-markers.push(marker);
+  }
 
 }
 
-});
 
+/* SEARCH BUS */
 
-/* Zoom map */
+function searchBus() {
 
-if(
-markers.length > 0
-){
+  const number = document.getElementById("busNumber")
+    .value.toLowerCase().trim();
 
-const group =
-L.featureGroup(markers);
+  const from = document.getElementById("from")
+    .value.toLowerCase().trim();
 
+  const to = document.getElementById("to")
+    .value.toLowerCase().trim();
 
-map.fitBounds(
-group.getBounds(),
-{
-padding:[20,20]
-}
-);
+  const type = document.getElementById("type")
+    .value.toLowerCase();
 
-}
+  const filtered = allBuses.filter(bus => {
+
+    const busNumber = String(bus.busNumber || "")
+      .toLowerCase();
+
+    const busFrom = String(bus.From || "")
+      .toLowerCase();
+
+    const busTo = String(bus.to || "")
+      .toLowerCase();
+
+    const busType = String(bus.Type || "")
+      .toLowerCase();
+
+    return (
+      busNumber.includes(number) &&
+      busFrom.includes(from) &&
+      busTo.includes(to) &&
+      (type === "all" || busType === type)
+    );
+
+  });
+
+  showBuses(filtered);
+
+  document.getElementById("status").innerHTML =
+    filtered.length + " bus found";
 
 }
 
 
-/* =========================
-   SEARCH BUS
-========================= */
-
-function searchBus(){
-
-const number =
-document
-.getElementById("busNumber")
-.value
-.toLowerCase()
-.trim();
-
-
-const from =
-document
-.getElementById("from")
-.value
-.toLowerCase()
-.trim();
-
-
-const to =
-document
-.getElementById("to")
-.value
-.toLowerCase()
-.trim();
-
-
-const type =
-document
-.getElementById("type")
-.value;
-
-
-/* Filter buses */
-
-const filtered =
-allBuses.filter(
-bus => {
-
-
-const busNumber =
-String(
-getBusValue(
-bus,
-"busNumber",
-bus.databaseId ||
-""
-)
-)
-.toLowerCase()
-.trim();
-
-
-const busFrom =
-String(
-getBusValue(
-bus,
-"From",
-""
-)
-)
-.toLowerCase()
-.trim();
-
-
-const busTo =
-String(
-getBusValue(
-bus,
-"to",
-""
-)
-)
-.toLowerCase()
-.trim();
-
-
-const busType =
-String(
-getBusValue(
-bus,
-"Type",
-""
-)
-)
-.toLowerCase()
-.trim();
-
-
-const numberMatch =
-!number ||
-busNumber.includes(number);
-
-
-const fromMatch =
-!from ||
-busFrom.includes(from);
-
-
-const toMatch =
-!to ||
-busTo.includes(to);
-
-
-const typeMatch =
-type === "All" || type === "All Bus" ||
-busType ===
-type.toLowerCase();
-
-
-return (
-numberMatch &&
-fromMatch &&
-toMatch &&
-typeMatch
-
-
-
-);
-}
-);
-
-/* Show result */
-
-showBuses(filtered);
-
-
-/* Status */
-
-document.getElementById("status").innerHTML =
-filtered.length > 0
-
-?
-
-"✅ "
-+
-filtered.length
-+
-" bus found"
-
-:
-
-"❌ No matching bus found";
-
-
-}
-
-
-/* =========================
-   START
-========================= */
-
-loadBuses();
+/* TEST PHONE GPS */
 
 function testMyGPS() {
+
   const status = document.getElementById("gpsStatus");
 
   if (!navigator.geolocation) {
-    alert("Your phone does not support GPS location.");
+
+    status.innerHTML = "❌ GPS not supported";
+
     return;
   }
 
-  if (status) {
-    status.textContent = "📍 GPS location is being checked...";
-  }
+  status.innerHTML = "📍 Checking GPS...";
 
   navigator.geolocation.getCurrentPosition(
-    function (position) {
+
+    function(position) {
+
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
 
-      if (status) {
-        status.textContent =
-          "📍 Your GPS: " + lat.toFixed(6) + ", " + lon.toFixed(6);
-      }
+      status.innerHTML =
+        "Latitude: " + lat.toFixed(6) +
+        "<br>Longitude: " + lon.toFixed(6);
 
-      alert("GPS working!\nLatitude: " + lat +
-            "\nLongitude: " + lon);
-    },
-    function (error) {
-      alert("GPS error: " + error.message +
-            "\nPlease allow location permission.");
-      if (status) {
-        status.textContent = "GPS permission or location error.";
-      }
-    },
-    { enableHighAccuracy: true, timeout: 20000 }
-  );
-}
-   
+      alert("GPS working successfully!");
 
-async function saveLiveGPS() {
-  const status = document.getElementById("liveSaveStatus");
-
-  const busNumber = document
-    .getElementById("busNumber")
-    .value.trim().toUpperCase();
-
-  if (!busNumber) {
-    alert("Please enter Bus Number first.");
-    return;
-  }
-
-  if (status) status.textContent = "Getting GPS location...";
-
-  if (!navigator.geolocation) {
-    alert("GPS is not supported on this phone.");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    async function(position) {
-      try {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        const busURL =
-          firebaseURL.replace(/\/$/, "") +
-          "/" + encodeURIComponent(busNumber) + ".json";
-
-        const check = await fetch(busURL);
-
-        if (!check.ok) {
-          throw new Error("Firebase read failed: " + check.status);
-        }
-
-        const busData = await check.json();
-
-        if (!busData || typeof busData !== "object") {
-          throw new Error("Bus Number not found in Firebase.");
-        }
-
-        const response = await fetch(busURL, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            Latitude: lat,
-            Longitude: lon,
-            updatedAt: new Date().toISOString()
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error("Firebase save failed: " + response.status);
-        }
-
-        if (status) {
-          status.textContent =
-            "GPS saved for " + busNumber +
-            ": " + lat.toFixed(6) + ", " + lon.toFixed(6);
-        }
-
-        alert("GPS saved successfully for " + busNumber);
-
-      } catch (error) {
-        if (status) status.textContent = "Save error: " + error.message;
-        alert("Firebase error: " + error.message);
-      }
     },
 
     function(error) {
-      if (status) status.textContent = "GPS error: " + error.message;
-      alert("GPS error: " + error.message);
+
+      status.innerHTML = "GPS Error: " + safeText(error.message);
+
     },
 
     {
@@ -905,21 +443,125 @@ async function saveLiveGPS() {
       timeout: 20000,
       maximumAge: 0
     }
+
   );
+
 }
 
 
+/* SAVE LIVE GPS */
+
+async function saveLiveGPS() {
+
+  const status = document.getElementById("liveSaveStatus");
+
+  const busNumber = document.getElementById("busNumber")
+    .value.trim().toUpperCase();
+
+  if (!busNumber) {
+
+    alert("Please enter Bus Number first.");
+
+    return;
+  }
+
+  if (!navigator.geolocation) {
+
+    alert("GPS is not supported.");
+
+    return;
+  }
+
+  status.innerHTML = "📍 Getting GPS location...";
+
+  navigator.geolocation.getCurrentPosition(
+
+    async function(position) {
+
+      try {
+
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        const busURL =
+          firebaseURL + "/" +
+          encodeURIComponent(busNumber) + ".json";
+
+        const check = await fetch(busURL);
+
+        if (!check.ok) {
+          throw new Error("Firebase read failed");
+        }
+
+        const busData = await check.json();
+
+        if (!busData || typeof busData !== "object") {
+          throw new Error("Bus Number not found in Firebase");
+        }
+
+        const response = await fetch(busURL, {
+
+          method: "PATCH",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+
+            Latitude: lat,
+            Longitude: lon,
+            updatedAt: new Date().toISOString()
+
+          })
+
+        });
+
+        if (!response.ok) {
+          throw new Error("Firebase save failed");
+        }
+
+        status.innerHTML =
+          "✅ GPS saved for " + safeText(busNumber);
+
+        alert("GPS saved successfully!");
+
+        await loadBuses();
+
+      } catch (error) {
+
+        status.innerHTML =
+          "❌ Save error: " + safeText(error.message);
+
+        alert(error.message);
+
+      }
+
+    },
+
+    function(error) {
+
+      status.innerHTML =
+        "❌ GPS error: " + safeText(error.message);
+
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0
+    }
+
+  );
+
+}
+
+
+/* START APP */
+
+loadBuses();
+
 </script>
 
-<div style="padding:12px">
-  <button type="button" onclick="testMyGPS()">Test My Phone GPS</button>
-  <p id="gpsStatus">GPS not tested yet</p>
-</div>
-   <div style="padding:12px">
-  <button type="button" onclick="saveLiveGPS()">Save Live GPS</button>
-  <p id="liveSaveStatus">Live GPS not saved yet</p>
-</div>
 </body>
-
 </html>
-
