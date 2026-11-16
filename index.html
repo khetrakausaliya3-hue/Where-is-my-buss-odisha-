@@ -146,6 +146,23 @@ placeholder="To: Example Rayagada">
 
 /* FIREBASE DATABASE */
 
+const firebaseConfig = {
+  apiKey: "AIzaSyC0CneoQrvruVu3a02A05oR_4whslAtFPQ",
+  authDomain: "where-is-my-buss-odisha.firebaseapp.com",
+  databaseURL: "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com",
+  projectId: "where-is-my-buss-odisha",
+  storageBucket: "where-is-my-buss-odisha.firebasestorage.app",
+  messagingSenderId: "531545613411",
+  appId: "1:531545613411:web:3d755ee06999fd23108456",
+  measurementId: "G-X7495P9PX3"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const auth = firebase.auth();
+
 const firebaseURL =
 "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com";
 
