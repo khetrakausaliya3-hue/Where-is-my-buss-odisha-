@@ -129,7 +129,8 @@ placeholder="To: Example Rayagada">
 <hr>
 
 <h2>📍 Driver GPS</h2>
-
+<button onclick="signInWithGoogle()">Sign in with Google</button>
+<p id="loginStatus">Not signed in</p>
 <button onclick="testMyGPS()">Test My Phone GPS</button>
 
 <p id="gpsStatus">GPS not tested yet</p>
@@ -162,7 +163,25 @@ if (!firebase.apps.length) {
 }
 
 const auth = firebase.auth();
+window.signInWithGoogle = async function() {
+  const provider = new firebase.auth.GoogleAuthProvider();
 
+  try {
+    await auth.signInWithRedirect(provider);
+  } catch (error) {
+    alert("Google Login Failed: " + error.message);
+  }
+};
+
+auth.onAuthStateChanged(function(user) {
+  const status = document.getElementById("loginStatus");
+
+  if (status) {
+    status.textContent = user
+      ? "Signed in: " + user.email
+      : "Not signed in";
+  }
+});
 const firebaseURL =
 "https://where-is-my-buss-odisha-default-rtdb.firebaseio.com";
 
